@@ -1,9 +1,11 @@
 package com.btt.pay.config;
 
 import com.btt.pay.domain.dto.UserDTO;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,15 +15,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Date;
 import java.util.function.Function;
 
+import javax.crypto.SecretKey;
+
 @Slf4j
 @Configuration
 public class JwtUtils {
 
-    @Value("${jwt.secret}")
-    private String jwtSigningKey;
-
     @Value("${jwt.expiration}")
     private long jwtExpiration;
+
+    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -42,9 +45,9 @@ public class JwtUtils {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(jwtSigningKey).build()
-                .parseClaimsJws(token).getBody();
+        return Jwts.parser()
+                .verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload();
     }
 
     private boolean isTokenExpired(String token) {
@@ -57,10 +60,10 @@ public class JwtUtils {
 
     private String createToken(UserDTO user) {
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSigningKey)))
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(secretKey)
                 .claim("userId", user.getId())
                 .compact();
     }

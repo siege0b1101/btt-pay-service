@@ -41,9 +41,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userService);
 
-        authProvider.setUserDetailsService(userService);
         authProvider.setPasswordEncoder(passwordEncoder());
 
         return authProvider;
@@ -65,17 +64,17 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-            .cors().and()
+        http.csrf((csrf) -> csrf.disable())
+            .cors((cors) -> cors.disable())
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
             .logout(logout -> logout
-                    .logoutUrl("http://localhost:3000/logout")
-                    .logoutSuccessUrl("http://localhost:3000")
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/")
                     .invalidateHttpSession(true)
                     .clearAuthentication(true))
             .addFilterBefore(new JwtAuthorizationFilter(userService, utils), UsernamePasswordAuthenticationFilter.class);
