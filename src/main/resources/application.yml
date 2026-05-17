@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/btt_pay
-    username: <Insert username here>
-    password: <Insert password here>
+    username: ${DB_USERNAME}
+    password: ${DB_PASS}
   jpa:
     show-sql: false
     hibernate:
@@ -16,7 +16,6 @@ logging:
 
 # JWT Properties
 jwt:
-  secret: QmlnIFRyYWRpbmcgVHJhZGVycyBQYXkgU2VydmljZSBTZWNyZXQgS2V5
   expiration: 28800000
 
 # App Properties
